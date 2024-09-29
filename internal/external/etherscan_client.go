@@ -7,10 +7,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// Client for Etherscan API
+// EtherscanClient is the client for interacting with the Etherscan API.
 type EtherscanClient struct {
 	*RateLimitedClient
-	baseUrl string
+	baseURL string
 	apiKey  string
 }
 
@@ -24,7 +24,7 @@ func NewEtherscanClient(apiKey string) *EtherscanClient {
 
 	return &EtherscanClient{
 		RateLimitedClient: NewRateLimitedClient(secondLimiter, dailyLimiter),
-		baseUrl:           "https://api.etherscan.io/api",
+		baseURL:           "https://api.etherscan.io/api",
 		apiKey:            apiKey,
 	}
 }
@@ -38,8 +38,8 @@ func (e *EtherscanClient) GetTransactionByHash(hash string) error {
 	params.Add("txhash", hash)
 	params.Add("apikey", e.apiKey)
 
-	txUrl := fmt.Sprintf("%s?%s", e.baseUrl, params.Encode())
-	_, err := e.Get(txUrl)
+	txURL := fmt.Sprintf("%s?%s", e.baseURL, params.Encode())
+	_, err := e.Get(txURL)
 	if err != nil {
 		return fmt.Errorf("error creating http request: %v", err)
 	}

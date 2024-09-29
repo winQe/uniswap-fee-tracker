@@ -37,6 +37,8 @@ func NewBinanceClient() *BinanceClient {
 	}
 }
 
+// GetETHUSDT fetches latest ETH - USDT conversion rate for the given timestamp (1 min interval)
+// It queries the Binance Kline API
 func (b *BinanceClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
 	params := url.Values{}
 	params.Add("symbol", "ETHUSDT")

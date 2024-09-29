@@ -1,12 +1,19 @@
 package external
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
+	"strconv"
 	"time"
 
 	"golang.org/x/time/rate"
 )
+
+type KlineData struct {
+	ClosePrice float64
+}
 
 // BinanceClient is the client for interacting with the Binance Spot API.
 type BinanceClient struct {
@@ -28,4 +35,50 @@ func NewBinanceClient() *BinanceClient {
 		RateLimitedClient: NewRateLimitedClient(rateLimit),
 		baseURL:           "https://api.binance.com/api/v3",
 	}
+}
+
+func (b *BinanceClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
+	params := url.Values{}
+	params.Add("symbol", "ETHUSDT")
+	params.Add("interval", "1m")
+	params.Add("startTime", fmt.Sprintf("%d", timestamp.UnixMilli()))
+
+	klinesURL := fmt.Sprintf("%s/klines?%s", b.baseURL, params.Encode())
+
+	res, err := b.httpClient.Get(klinesURL)
+	if err != nil {
+		return nil, fmt.Errorf("error making GET request: %v", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	// Format can be found here
+	// https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data
+	var klines [][]interface{}
+	if err := json.Unmarshal(body, &klines); err != nil {
+		return nil, fmt.Errorf("error parsing JSON: %v", err)
+	}
+
+	// Check if klines is empty
+	if len(klines) == 0 {
+		return nil, fmt.Errorf("no kline data returned")
+	}
+
+	closePriceStr, ok := klines[0][4].(string)
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for close price")
+	}
+	closePrice, err := strconv.ParseFloat(closePriceStr, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting close price to float64: %v", err)
+	}
+
+	// Return struct instead of a single value for future-proofing
+	return &KlineData{
+		ClosePrice: closePrice,
+	}, nil
 }

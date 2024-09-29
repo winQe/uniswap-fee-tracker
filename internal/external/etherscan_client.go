@@ -41,7 +41,7 @@ func (e *EtherscanClient) GetTransactionByHash(hash string) error {
 	txURL := fmt.Sprintf("%s?%s", e.baseURL, params.Encode())
 	_, err := e.Get(txURL)
 	if err != nil {
-		return fmt.Errorf("error creating http request: %v", err)
+		return fmt.Errorf("error making GET request: %v", err)
 	}
 
 	// TODO: Parse the response and return the gas fee

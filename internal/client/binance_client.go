@@ -11,10 +11,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-type KlineData struct {
-	ClosePrice float64
-}
-
 // BinanceClient is the client for interacting with the Binance Spot API.
 type BinanceClient struct {
 	*RateLimitedClient

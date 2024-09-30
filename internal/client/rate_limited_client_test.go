@@ -21,7 +21,7 @@ func TestRateLimitedClientGet(t *testing.T) {
 
 	start := time.Now()
 	for i := 0; i < 3; i++ {
-		resp, err := client.Get(server.URL)
+		resp, err := client.get(server.URL)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}

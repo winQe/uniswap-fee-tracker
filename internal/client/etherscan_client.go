@@ -39,7 +39,7 @@ func (e *EtherscanClient) GetTransactionByHash(hash string) error {
 	params.Add("apikey", e.apiKey)
 
 	txURL := fmt.Sprintf("%s?%s", e.baseURL, params.Encode())
-	_, err := e.Get(txURL)
+	_, err := e.get(txURL)
 	if err != nil {
 		return fmt.Errorf("error making GET request: %v", err)
 	}

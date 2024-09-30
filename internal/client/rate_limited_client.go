@@ -21,8 +21,8 @@ func NewRateLimitedClient(rateLimits ...*rate.Limiter) *RateLimitedClient {
 	}
 }
 
-// Get sends a GET request with rate limits applied
-func (c *RateLimitedClient) Get(url string) (*http.Response, error) {
+// get sends a GET request with rate limits applied
+func (c *RateLimitedClient) get(url string) (*http.Response, error) {
 	ctx := context.Background()
 
 	// Apply the rate limits

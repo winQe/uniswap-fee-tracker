@@ -43,7 +43,7 @@ func (b *BinanceClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
 
 	klinesURL := fmt.Sprintf("%s/klines?%s", b.baseURL, params.Encode())
 
-	res, err := b.httpClient.Get(klinesURL)
+	res, err := b.get(klinesURL)
 	if err != nil {
 		return nil, fmt.Errorf("error making GET request: %v", err)
 	}

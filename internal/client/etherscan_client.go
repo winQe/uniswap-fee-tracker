@@ -131,6 +131,23 @@ func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, 
 	return txData, nil
 }
 
+// GetLatestTransaction fetches the latest transaction from the Uniswap V3 ETH-USDC pool.
+func (e *EtherscanClient) GetLatestTransaction() (*TransactionData, error) {
+	// Only the latest transaction
+	offset := 1
+	transactions, err := e.listTransactions(&offset, nil, nil)
+	if err != nil || len(transactions) == 0 {
+		return nil, fmt.Errorf("error fetching the latest transaction: %v", err)
+	}
+	return &transactions[0], nil
+}
+
+// GetTransactionFromBlock fetches all transactions from the Uniswap V3 ETH-USDC pool between the specified block range.
+func (e *EtherscanClient) GetTransactionFromBlock(startBlock uint64, endBlock uint64) ([]TransactionData, error) {
+	return e.listTransactions(nil, &startBlock, &endBlock)
+}
+
+// listTransactions is a helper function to query transactions from the Uniswap V3 ETH-USDC pool based on optional parameters.
 func (e *EtherscanClient) listTransactions(offset *int, startBlock *uint64, endBlock *uint64) ([]TransactionData, error) {
 	params := url.Values{}
 

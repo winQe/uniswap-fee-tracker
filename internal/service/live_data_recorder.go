@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/winQe/uniswap-fee-tracker/internal/db/sqlc"
 	"github.com/winQe/uniswap-fee-tracker/internal/domain"
 )
@@ -78,9 +78,9 @@ func (ldr *LiveDataRecorder) recordNewTransactions() {
 				Timestamp:          tx.Timestamp,
 				GasUsed:            int64(tx.GasUsed),
 				GasPriceWei:        tx.GasPriceWei.Int64(),
-				TransactionFeeEth:  sql.NullFloat64{Float64: tx.TransactionFeeETH, Valid: true},
-				TransactionFeeUsdt: sql.NullFloat64{Float64: tx.TransactionFeeUSDT, Valid: true},
-				EthUsdtPrice:       sql.NullFloat64{Float64: tx.ETHUSDTPrice, Valid: true},
+				TransactionFeeEth:  pgtype.Float8{Float64: tx.TransactionFeeETH, Valid: true},
+				TransactionFeeUsdt: pgtype.Float8{Float64: tx.TransactionFeeUSDT, Valid: true},
+				EthUsdtPrice:       pgtype.Float8{Float64: tx.ETHUSDTPrice, Valid: true},
 			})
 			if err != nil {
 				log.Printf("Error inserting transaction %s into DB: %v\n", tx.Hash, err)

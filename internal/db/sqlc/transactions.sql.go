@@ -7,8 +7,9 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getTransactionByHash = `-- name: GetTransactionByHash :one
@@ -26,7 +27,7 @@ WHERE transaction_hash = $1
 `
 
 func (q *Queries) GetTransactionByHash(ctx context.Context, transactionHash string) (Transactions, error) {
-	row := q.db.QueryRowContext(ctx, getTransactionByHash, transactionHash)
+	row := q.db.QueryRow(ctx, getTransactionByHash, transactionHash)
 	var i Transactions
 	err := row.Scan(
 		&i.TransactionHash,
@@ -57,7 +58,7 @@ ORDER BY timestamp DESC
 `
 
 func (q *Queries) GetTransactionsByBlockNumber(ctx context.Context, blockNumber int64) ([]Transactions, error) {
-	rows, err := q.db.QueryContext(ctx, getTransactionsByBlockNumber, blockNumber)
+	rows, err := q.db.Query(ctx, getTransactionsByBlockNumber, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +79,6 @@ func (q *Queries) GetTransactionsByBlockNumber(ctx context.Context, blockNumber 
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -109,7 +107,7 @@ type GetTransactionsByTimeRangeParams struct {
 }
 
 func (q *Queries) GetTransactionsByTimeRange(ctx context.Context, arg GetTransactionsByTimeRangeParams) ([]Transactions, error) {
-	rows, err := q.db.QueryContext(ctx, getTransactionsByTimeRange, arg.Timestamp, arg.Timestamp_2)
+	rows, err := q.db.Query(ctx, getTransactionsByTimeRange, arg.Timestamp, arg.Timestamp_2)
 	if err != nil {
 		return nil, err
 	}
@@ -130,9 +128,6 @@ func (q *Queries) GetTransactionsByTimeRange(ctx context.Context, arg GetTransac
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -156,18 +151,18 @@ INSERT INTO transactions (
 `
 
 type InsertTransactionParams struct {
-	TransactionHash    string          `json:"transaction_hash"`
-	BlockNumber        int64           `json:"block_number"`
-	Timestamp          time.Time       `json:"timestamp"`
-	GasUsed            int64           `json:"gas_used"`
-	GasPriceWei        int64           `json:"gas_price_wei"`
-	TransactionFeeEth  sql.NullFloat64 `json:"transaction_fee_eth"`
-	TransactionFeeUsdt sql.NullFloat64 `json:"transaction_fee_usdt"`
-	EthUsdtPrice       sql.NullFloat64 `json:"eth_usdt_price"`
+	TransactionHash    string        `json:"transaction_hash"`
+	BlockNumber        int64         `json:"block_number"`
+	Timestamp          time.Time     `json:"timestamp"`
+	GasUsed            int64         `json:"gas_used"`
+	GasPriceWei        int64         `json:"gas_price_wei"`
+	TransactionFeeEth  pgtype.Float8 `json:"transaction_fee_eth"`
+	TransactionFeeUsdt pgtype.Float8 `json:"transaction_fee_usdt"`
+	EthUsdtPrice       pgtype.Float8 `json:"eth_usdt_price"`
 }
 
 func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionParams) error {
-	_, err := q.db.ExecContext(ctx, insertTransaction,
+	_, err := q.db.Exec(ctx, insertTransaction,
 		arg.TransactionHash,
 		arg.BlockNumber,
 		arg.Timestamp,

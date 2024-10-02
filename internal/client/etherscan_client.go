@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"net/url"
 	"strconv"
@@ -207,7 +206,6 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 		return nil, fmt.Errorf("error parsing transactions: %v", err)
 	}
 
-	log.Println(transactionsDetails)
 	// Convert to []TransactionData
 	transactions, err := convertResponseToTransactionData(transactionsDetails)
 	if err != nil {
@@ -222,7 +220,6 @@ func convertResponseToTransactionData(details []tokenTxDetails) ([]TransactionDa
 	var transactions []TransactionData
 
 	for _, detail := range details {
-		log.Println(detail)
 		txData, err := convertToTransactionData(detail)
 		if err != nil {
 			// Log the error and skip the transaction

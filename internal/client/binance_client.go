@@ -39,6 +39,9 @@ func NewKlineClient() *KlineClient {
 // GetETHUSDT fetches the latest ETH/USDT conversion rate for the given timestamp (1 min interval).
 // It queries the Binance Kline API.
 func (k *KlineClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
+	if timestamp.IsZero() {
+		return nil, fmt.Errorf("timestamp is invalid")
+	}
 	// Respect the rate limit
 	if err := k.rateLimiter.Wait(context.Background()); err != nil {
 		return nil, fmt.Errorf("rate limiter error: %v", err)

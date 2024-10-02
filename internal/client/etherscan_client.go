@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"net/url"
 	"strconv"
@@ -206,12 +207,9 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 		return nil, fmt.Errorf("error parsing transactions: %v", err)
 	}
 
+	log.Println(transactionsDetails)
 	// Convert to []TransactionData
-	transactions, err := convertResponseToTransactionData(tokenTxResponse{
-		Status:  result.Status,
-		Message: result.Message,
-		Result:  nil, // Not used here
-	}, transactionsDetails)
+	transactions, err := convertResponseToTransactionData(transactionsDetails)
 	if err != nil {
 		return nil, fmt.Errorf("error converting response to TransactionData: %v", err)
 	}
@@ -220,10 +218,11 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 }
 
 // Adjust convertResponseToTransactionData to accept tokenTxDetails as a parameter
-func convertResponseToTransactionData(response tokenTxResponse, details []tokenTxDetails) ([]TransactionData, error) {
+func convertResponseToTransactionData(details []tokenTxDetails) ([]TransactionData, error) {
 	var transactions []TransactionData
 
 	for _, detail := range details {
+		log.Println(detail)
 		txData, err := convertToTransactionData(detail)
 		if err != nil {
 			// Log the error and skip the transaction
@@ -255,11 +254,18 @@ func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) 
 		return nil, fmt.Errorf("error converting GasPrice to big.Int")
 	}
 
+	unixTime, err := strconv.ParseInt(details.TimeStamp, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting timestamp:", err)
+	}
+	txTime := time.Unix(unixTime, 0)
+
 	txData := &TransactionData{
 		BlockNumber: blockNumber,
 		Hash:        details.Hash,
 		GasUsed:     gasUsed,
 		GasPriceWei: gasPriceWei,
+		Timestamp:   txTime,
 	}
 
 	return txData, nil

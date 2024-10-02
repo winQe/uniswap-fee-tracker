@@ -18,7 +18,7 @@ func TestPriceManager_GetETHUSDT(t *testing.T) {
 		mockClient := new(mocks.MockPriceClient)
 
 		// Simulate cache hit, external API shouldn't be called
-		mockCache.On("GetRate", "eth-usdt").Return(4800.75, nil)
+		mockCache.On("GetRate", timestamp).Return(4800.75, nil)
 		mockClient.AssertNotCalled(t, "GetETHUSDT")
 
 		priceManager := NewPriceManager(mockCache, mockClient)
@@ -36,9 +36,9 @@ func TestPriceManager_GetETHUSDT(t *testing.T) {
 		mockClient := new(mocks.MockPriceClient)
 
 		// Simulate cache miss, valid external API response, and storing in cache
-		mockCache.On("GetRate", "eth-usdt").Return(0.0, errors.New("cache miss"))
+		mockCache.On("GetRate", timestamp).Return(0.0, errors.New("cache miss"))
 		mockClient.On("GetETHUSDT", timestamp).Return(&client.KlineData{ClosePrice: 1850.00}, nil)
-		mockCache.On("StoreRate", "eth-usdt", 1850.00).Return(nil)
+		mockCache.On("StoreRate", timestamp, 1850.00).Return(nil)
 
 		priceManager := NewPriceManager(mockCache, mockClient)
 		price, err := priceManager.GetETHUSDT(timestamp)
@@ -55,7 +55,7 @@ func TestPriceManager_GetETHUSDT(t *testing.T) {
 		mockClient := new(mocks.MockPriceClient)
 
 		// Simulate cache miss, external API API failure
-		mockCache.On("GetRate", "eth-usdt").Return(0.0, errors.New("cache miss"))
+		mockCache.On("GetRate", timestamp).Return(0.0, errors.New("cache miss"))
 		mockClient.On("GetETHUSDT", timestamp).Return((*client.KlineData)(nil), errors.New("external API error"))
 
 		priceManager := NewPriceManager(mockCache, mockClient)
@@ -74,9 +74,9 @@ func TestPriceManager_GetETHUSDT(t *testing.T) {
 		mockClient := new(mocks.MockPriceClient)
 
 		// Simulate cache miss, valid external API response, but cache store fails
-		mockCache.On("GetRate", "eth-usdt").Return(0.0, errors.New("cache miss"))
+		mockCache.On("GetRate", timestamp).Return(0.0, errors.New("cache miss"))
 		mockClient.On("GetETHUSDT", timestamp).Return(&client.KlineData{ClosePrice: 1850.00}, nil)
-		mockCache.On("StoreRate", "eth-usdt", 1850.00).Return(errors.New("could not store in cache"))
+		mockCache.On("StoreRate", timestamp, 1850.00).Return(errors.New("could not store in cache"))
 
 		priceManager := NewPriceManager(mockCache, mockClient)
 		price, err := priceManager.GetETHUSDT(timestamp)

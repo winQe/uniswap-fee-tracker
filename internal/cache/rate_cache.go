@@ -4,35 +4,75 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
+// RateCache implements the RateStore interface.
 type RateCache struct {
 	*RedisCache
+	sortedSetKey string
+	ttl          time.Duration
 }
 
 const rateDB = 0
 
-func NewRateCache(addr, password string) *RateCache {
+// NewRateCache creates a new RateCache instance.
+func NewRateCache(addr, password string) RateStore {
 	return &RateCache{
-		NewRedisCache(addr, password, rateDB),
+		RedisCache:   NewRedisCache(addr, password, rateDB),
+		sortedSetKey: "rate_cache",    // key for redis sorted set
+		ttl:          2 * time.Minute, // price expires after 2 minutes
 	}
 }
 
-// StorePrice stores a price value for the given key (e.g., "eth-usdt") which has TTL of 1 minute
-func (rc *RateCache) StoreRate(key string, price float64) error {
-	return rc.client.Set(rc.ctx, key, price, time.Minute).Err()
-}
-
-// GetPrice retrieves the rate value for the given key
-func (rc *RedisCache) GetRate(key string) (float64, error) {
-	val, err := rc.client.Get(rc.ctx, key).Result()
+// StoreRate stores the current price with the given timestamp.
+func (rc *RateCache) StoreRate(timestamp time.Time, price float64) error {
+	ts := timestamp.Unix()
+	_, err := rc.client.ZAdd(rc.ctx, rc.sortedSetKey, redis.Z{
+		Score:  float64(ts),
+		Member: price,
+	}).Result()
 	if err != nil {
-		return 0, fmt.Errorf("error could not retrieve key %s: %w", key, err)
+		return fmt.Errorf("error adding rate to sorted set: %w", err)
 	}
 
-	price, err := strconv.ParseFloat(val, 64)
+	// Set the TTL for the sorted set key
+	// Reset the TTL every time a new rate is stored to keep the key alive as long as data is being added
+	err = rc.client.Expire(rc.ctx, rc.sortedSetKey, rc.ttl).Err()
 	if err != nil {
-		return 0, fmt.Errorf("error could not parse value for key %s: %w", key, err)
+		return fmt.Errorf("error setting expiration on sorted set: %w", err)
+	}
+
+	return nil
+}
+
+// GetRate retrieves the price within a 1-minute range of the given timestamp.
+func (rc *RateCache) GetRate(timestamp time.Time) (float64, error) {
+	ts := timestamp.Unix()
+
+	// Scores to find prices within one minute range of the provided timestamp
+	minScore := float64(ts - 60)
+	maxScore := float64(ts + 60)
+
+	// Retrieve members with their scores within the specified score range
+	zRange, err := rc.client.ZRangeByScoreWithScores(rc.ctx, rc.sortedSetKey, &redis.ZRangeBy{
+		Min: fmt.Sprintf("%f", minScore),
+		Max: fmt.Sprintf("%f", maxScore),
+	}).Result()
+	if err != nil {
+		return 0, fmt.Errorf("error querying sorted set with scores: %w", err)
+	}
+
+	if len(zRange) == 0 {
+		return 0, fmt.Errorf("no rate found within 1-minute range of timestamp %v", timestamp)
+	}
+
+	// Return the first rate found within the range
+	firstMember := zRange[0].Member.(string)
+	price, err := strconv.ParseFloat(firstMember, 64)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing price: %w", err)
 	}
 
 	return price, nil

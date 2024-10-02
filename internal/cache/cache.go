@@ -1,7 +1,10 @@
 package cache
 
-// RateStore defines the interface for interacting with rate cache. Mostly for dependency injection
+import "time"
+
+// RateStore defines the interface for interacting with the rate cache.
+// It allows storing and retrieving rate values based on timestamps.
 type RateStore interface {
-	StoreRate(key string, price float64) error
-	GetRate(key string) (float64, error)
+	StoreRate(timestamp time.Time, price float64) error
+	GetRate(timestamp time.Time) (float64, error)
 }

@@ -15,13 +15,6 @@ type TransactionManager struct {
 	priceManager      PriceManagerInterface
 }
 
-type TxWithPrice struct {
-	client.TransactionData
-	ETHUSDTPrice       float64
-	TransctionFeeETH   float64
-	TransactionFeeUSDT float64
-}
-
 // GetLatestBlockNumber returns the latest transaction block number from the Uniswap V3 WETH-USDC pool
 func (tm *TransactionManager) GetLatestBlockNumber() (uint64, error) {
 	txData, err := tm.transactionClient.GetLatestTransaction()

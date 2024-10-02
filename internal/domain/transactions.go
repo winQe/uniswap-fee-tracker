@@ -61,6 +61,10 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 	// Ensure stopSignal is closed only once
 	var once sync.Once
 
+	// Set to track unique transaction hashes
+	uniqueHashes := make(map[string]struct{})
+	var mu sync.Mutex
+
 	// Worker function: fetches and processes transactions from pages channel
 	worker := func() {
 		defer wg.Done()
@@ -77,7 +81,6 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 				// Fetch transactions for the current page
 				transactions, err := tm.transactionClient.ListTransactions(&batchSize, &startBlock, &endBlock, &page)
 				if err != nil {
-					fmt.Printf("Error fetching page %d: %v\n", page, err)
 					// If it's a "No transactions found" error, assume no more pages
 					if strings.Contains(err.Error(), "No transactions found") {
 						once.Do(func() {
@@ -89,6 +92,15 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 
 				// Process transactions
 				for _, tx := range transactions {
+					mu.Lock()
+					if _, exists := uniqueHashes[tx.Hash]; exists {
+						mu.Unlock() // Already processed, skip
+						continue
+					}
+					// Mark hash as processed
+					uniqueHashes[tx.Hash] = struct{}{}
+					mu.Unlock()
+
 					txWithPrice, err := tm.processTransaction(tx)
 					if err != nil {
 						fmt.Printf("Error processing transaction %s: %v\n", tx.Hash, err)
@@ -164,7 +176,7 @@ func (tm *TransactionManager) processTransaction(tx client.TransactionData) (*Tx
 	}
 
 	// Calculate fees
-	feeETH := utils.ConvertToETH(tx.GasPriceWei)
+	feeETH := utils.ConvertToETH(tx.GasPriceWei) * float64(tx.GasUsed)
 	feeUSDT := feeETH * ethUSDTConversionRate
 
 	return &TxWithPrice{

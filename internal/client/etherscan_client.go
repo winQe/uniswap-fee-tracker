@@ -36,9 +36,9 @@ type receiptDetails struct {
 
 // tokenTxResponse represents the API response of tokenTx API call
 type tokenTxResponse struct {
-	Status  string           `json:"status"` // OK = 1
-	Message string           `json:"message"`
-	Result  []tokenTxDetails `json:"result"`
+	Status  string          `json:"status"` // OK = 1
+	Message string          `json:"message"`
+	Result  json.RawMessage `json:"result"`
 }
 
 // tokenTxDetails holds the core detail of the transaction from tokenTx
@@ -61,7 +61,7 @@ type blockNumberResponse struct {
 }
 
 // NewEtherscanClient initializes Etherscan with Free Plan API Limits
-func NewEtherscanClient(apiKey string) *EtherscanClient {
+func NewEtherscanClient(apiKey string, poolAddress string) *EtherscanClient {
 	// 5 API calls per second
 	secondLimiter := rate.NewLimiter(5, 5) // 5 requests per second, burst of 5
 
@@ -72,6 +72,7 @@ func NewEtherscanClient(apiKey string) *EtherscanClient {
 		RateLimitedClient: NewRateLimitedClient(secondLimiter, dailyLimiter),
 		baseURL:           "https://api.etherscan.io/api",
 		apiKey:            apiKey,
+		poolAddress:       poolAddress,
 	}
 }
 
@@ -188,12 +189,29 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 		return nil, fmt.Errorf("error parsing JSON response: %v", err)
 	}
 
-	// Check for success in the API response (status == 1)
+	// Check for success in the API response (status == "1")
 	if result.Status != "1" {
-		return nil, fmt.Errorf("Etherscan server error: %s", result.Message)
+		// Attempt to extract the error message from Result
+		var errorMsg string
+		if err := json.Unmarshal(result.Result, &errorMsg); err != nil {
+			// If Result is not a string, return the original message
+			return nil, fmt.Errorf("Etherscan server error: %s", result.Message)
+		}
+		return nil, fmt.Errorf("Etherscan server error: %s", errorMsg)
 	}
 
-	transactions, err := convertResponseToTransactionData(result)
+	// Unmarshal the Result into []tokenTxDetails
+	var transactionsDetails []tokenTxDetails
+	if err := json.Unmarshal(result.Result, &transactionsDetails); err != nil {
+		return nil, fmt.Errorf("error parsing transactions: %v", err)
+	}
+
+	// Convert to []TransactionData
+	transactions, err := convertResponseToTransactionData(tokenTxResponse{
+		Status:  result.Status,
+		Message: result.Message,
+		Result:  nil, // Not used here
+	}, transactionsDetails)
 	if err != nil {
 		return nil, fmt.Errorf("error converting response to TransactionData: %v", err)
 	}
@@ -201,14 +219,16 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 	return transactions, nil
 }
 
-// Convert a tokenTxResponse to a slice of TransactionData
-func convertResponseToTransactionData(response tokenTxResponse) ([]TransactionData, error) {
+// Adjust convertResponseToTransactionData to accept tokenTxDetails as a parameter
+func convertResponseToTransactionData(response tokenTxResponse, details []tokenTxDetails) ([]TransactionData, error) {
 	var transactions []TransactionData
 
-	for _, detail := range response.Result {
+	for _, detail := range details {
 		txData, err := convertToTransactionData(detail)
 		if err != nil {
-			return nil, err
+			// Log the error and skip the transaction
+			fmt.Printf("Error converting transaction data: %v\n", err)
+			continue
 		}
 		transactions = append(transactions, *txData)
 	}

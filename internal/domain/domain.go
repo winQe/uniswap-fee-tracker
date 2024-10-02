@@ -23,6 +23,6 @@ type TransactionManagerInterface interface {
 type TxWithPrice struct {
 	client.TransactionData
 	ETHUSDTPrice       float64
-	TransctionFeeETH   float64
+	TransactionFeeETH  float64
 	TransactionFeeUSDT float64
 }

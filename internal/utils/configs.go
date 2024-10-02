@@ -5,13 +5,16 @@ import (
 )
 
 type Config struct {
-	DBUser          string `mapstructure:"DB_USER"`
-	DBPassword      string `mapstructure:"DB_PASSWORD"`
-	DBAddress       string `mapstructure:"DB_ADDRESS"`
-	DBName          string `mapstructure:"DB_NAME"`
-	RedisURL        string `mapstructure:"REDIS_URL"`
-	EtherscanAPIKey string `mapstructure:"ETHERSCAN_API_KEY"`
-	ServerPort      string `mapstructure:"SERVER_PORT"`
+	DBUser              string `mapstructure:"DB_USER"`
+	DBPassword          string `mapstructure:"DB_PASSWORD"`
+	DBAddress           string `mapstructure:"DB_ADDRESS"`
+	DBPort              string `mapstructure:"DB_PORT"`
+	DBName              string `mapstructure:"DB_NAME"`
+	RedisURL            string `mapstructure:"REDIS_URL"`
+	RedisPassword       string `mapstructure:"REDIS_PASSWORD"`
+	EtherscanAPIKey     string `mapstructure:"ETHERSCAN_API_KEY"`
+	ServerPort          string `mapstructure:"SERVER_PORT"`
+	WETHUSDCPoolAddress string `mapstructure:"WETH_USDT_POOL_ADDRESS"`
 }
 
 // LoadConfig reads configuration from file or environment variables.

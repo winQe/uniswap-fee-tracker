@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/winQe/uniswap-fee-tracker/internal/client"
@@ -13,6 +14,14 @@ import (
 type TransactionManager struct {
 	transactionClient client.TransactionClient
 	priceManager      PriceManagerInterface
+}
+
+// NewTransactionManager creates and returns a new instance of TransactionManager
+func NewTransactionManager(transactionClient client.TransactionClient, priceManager PriceManagerInterface) *TransactionManager {
+	return &TransactionManager{
+		transactionClient: transactionClient,
+		priceManager:      priceManager,
+	}
 }
 
 // GetLatestBlockNumber returns the latest transaction block number from the Uniswap V3 WETH-USDC pool
@@ -36,7 +45,7 @@ func (tm *TransactionManager) GetTransaction(hash string) (*TxWithPrice, error) 
 }
 
 // BatchProcessTransactions fetches and processes transactions within the given block range.
-// It utilizes concurrent worker to fetch and process transactions
+// It utilizes concurrent workers to fetch and process transactions.
 func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlock uint64, ctx context.Context) ([]TxWithPrice, error) {
 	var allTransactions []TxWithPrice
 
@@ -66,9 +75,15 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 					return
 				}
 				// Fetch transactions for the current page
-				transactions, err := tm.transactionClient.ListTransactions(&batchSize, &startBlock, nil, &page)
+				transactions, err := tm.transactionClient.ListTransactions(&batchSize, &startBlock, &endBlock, &page)
 				if err != nil {
 					fmt.Printf("Error fetching page %d: %v\n", page, err)
+					// If it's a "No transactions found" error, assume no more pages
+					if strings.Contains(err.Error(), "No transactions found") {
+						once.Do(func() {
+							close(stopSignal)
+						})
+					}
 					continue
 				}
 
@@ -142,24 +157,18 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 
 // processTransaction fetches transaction receipt and calculates fees
 func (tm *TransactionManager) processTransaction(tx client.TransactionData) (*TxWithPrice, error) {
-	// Fetch transaction receipt
-	txWithReceipt, err := tm.transactionClient.GetTransactionReceipt(tx.Hash)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction receipt: %v", err)
-	}
-
 	// Fetch ETH-USDT conversion rate at the transaction's timestamp
-	ethUSDTConversionRate, err := tm.priceManager.GetETHUSDT(txWithReceipt.Timestamp)
+	ethUSDTConversionRate, err := tm.priceManager.GetETHUSDT(tx.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ETH-USDT conversion rate: %v", err)
 	}
 
 	// Calculate fees
-	feeETH := utils.ConvertToETH(txWithReceipt.GasPriceWei)
+	feeETH := utils.ConvertToETH(tx.GasPriceWei)
 	feeUSDT := feeETH * ethUSDTConversionRate
 
 	return &TxWithPrice{
-		*txWithReceipt,
+		tx,
 		ethUSDTConversionRate,
 		feeETH,
 		feeUSDT,

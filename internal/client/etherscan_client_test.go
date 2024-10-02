@@ -221,7 +221,7 @@ func TestListTransactions(t *testing.T) {
 	offset := 10
 	startBlock := uint64(1000000)
 	endBlock := uint64(2000000)
-	transactions, err := client.listTransactions(&offset, &startBlock, &endBlock)
+	transactions, err := client.ListTransactions(&offset, &startBlock, &endBlock, nil)
 	assert.NoError(t, err, "Expected no error from listTransactions")
 
 	expectedGasPrice1, _ := new(big.Int).SetString("34768791303", 10)

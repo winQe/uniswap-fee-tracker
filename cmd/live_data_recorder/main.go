@@ -34,7 +34,7 @@ func main() {
 
 	// Initialize all price related dependencies
 	priceCache := cache.NewRateCache(config.RedisURL, config.RedisPassword)
-	binanceClient := client.NewBinanceClient()
+	binanceClient := client.NewKlineClient()
 	priceManager := domain.NewPriceManager(priceCache, binanceClient)
 
 	// Initialize all transactions related dependencies

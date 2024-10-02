@@ -22,7 +22,7 @@ func NewRateCache(addr, password string) RateStore {
 	return &RateCache{
 		RedisCache:   NewRedisCache(addr, password, rateDB),
 		sortedSetKey: "rate_cache",    // key for redis sorted set
-		ttl:          2 * time.Minute, // price expires after 2 minutes
+		ttl:          5 * time.Minute, // price expires after 5 minutes
 	}
 }
 
@@ -47,13 +47,13 @@ func (rc *RateCache) StoreRate(timestamp time.Time, price float64) error {
 	return nil
 }
 
-// GetRate retrieves the price within a 1-minute range of the given timestamp.
+// GetRate retrieves the price within a 5-minute range of the given timestamp.
 func (rc *RateCache) GetRate(timestamp time.Time) (float64, error) {
 	ts := timestamp.Unix()
 
 	// Scores to find prices within one minute range of the provided timestamp
-	minScore := float64(ts - 60)
-	maxScore := float64(ts + 60)
+	minScore := float64(ts - 60*5)
+	maxScore := float64(ts + 60*5)
 
 	// Retrieve members with their scores within the specified score range
 	zRange, err := rc.client.ZRangeByScoreWithScores(rc.ctx, rc.sortedSetKey, &redis.ZRangeBy{
@@ -65,7 +65,7 @@ func (rc *RateCache) GetRate(timestamp time.Time) (float64, error) {
 	}
 
 	if len(zRange) == 0 {
-		return 0, fmt.Errorf("no rate found within 1-minute range of timestamp %v", timestamp)
+		return 0, fmt.Errorf("no rate found within 5-minute range of timestamp %v", timestamp)
 	}
 
 	// Return the first rate found within the range

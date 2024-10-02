@@ -36,7 +36,7 @@ func NewPriceManager(rateStore cache.RateStore, priceClient client.PriceClient) 
 // It first checks the lastPrice, then the cache, and finally fetches from the external API if needed.
 func (p *PriceManager) GetETHUSDT(timestamp time.Time) (float64, error) {
 	// Define a validity window for lastPrice (e.g., within the same minute)
-	const validityDuration = time.Minute
+	const validityDuration = 15 * time.Minute
 
 	// Attempt to read the lastPrice with a read lock
 	p.mu.RLock()

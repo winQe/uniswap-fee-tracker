@@ -50,7 +50,7 @@ func (k *KlineClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
 	// Prepare the Kline request
 	klinesService := k.binanceClient.NewKlinesService()
 	klinesService.Symbol("ETHUSDT").
-		Interval("1m").
+		Interval("5m").
 		StartTime(timestamp.UnixMilli()).
 		Limit(1) // Fetch only the latest kline
 

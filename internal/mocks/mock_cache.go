@@ -1,6 +1,10 @@
 package mocks
 
-import "github.com/stretchr/testify/mock"
+import (
+	"time"
+
+	"github.com/stretchr/testify/mock"
+)
 
 // MockRateCache is a mock implementation of the RateCache interface.
 type MockRateCache struct {
@@ -8,13 +12,13 @@ type MockRateCache struct {
 }
 
 // GetRate mocks the GetRate method of RateCache.
-func (m *MockRateCache) GetRate(key string) (float64, error) {
-	args := m.Called(key)
+func (m *MockRateCache) GetRate(timestamp time.Time) (float64, error) {
+	args := m.Called(timestamp)
 	return args.Get(0).(float64), args.Error(1)
 }
 
 // StoreRate mocks the StoreRate method of RateCache.
-func (m *MockRateCache) StoreRate(key string, value float64) error {
-	args := m.Called(key, value)
+func (m *MockRateCache) StoreRate(timestamp time.Time, value float64) error {
+	args := m.Called(timestamp, value)
 	return args.Error(0)
 }

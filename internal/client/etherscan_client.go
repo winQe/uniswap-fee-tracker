@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/time/rate"
@@ -17,14 +18,6 @@ type EtherscanClient struct {
 	baseURL     string
 	apiKey      string
 	poolAddress string
-}
-
-// TransactionData represents the simplified transaction result from the API calls
-type TransactionData struct {
-	BlockNumber uint64
-	Hash        string
-	GasUsed     uint64
-	GasPriceWei *big.Int
 }
 
 // receiptResponse represents API response for the transaction receipt.
@@ -60,6 +53,13 @@ type tokenTxDetails struct {
 	GasUsed      string `json:"gasUsed"`
 }
 
+// blockNumberResponse represents the API response for getting block number by timestamp.
+type blockNumberResponse struct {
+	Status  string `json:"status"`  // "1" indicates success
+	Message string `json:"message"` // e.g., "OK"
+	Result  string `json:"result"`  // Block number as a string
+}
+
 // NewEtherscanClient initializes Etherscan with Free Plan API Limits
 func NewEtherscanClient(apiKey string) *EtherscanClient {
 	// 5 API calls per second
@@ -75,6 +75,9 @@ func NewEtherscanClient(apiKey string) *EtherscanClient {
 	}
 }
 
+// GetTransactionReceipt fetches the transaction receipt based on the txHash
+// TODO: Needs to verify whether transaction actually belongs in the WETH-USDT Pool
+// TODO: Timestamp from eth_getBlockByNumber
 func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, error) {
 	params := url.Values{}
 
@@ -135,20 +138,16 @@ func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, 
 func (e *EtherscanClient) GetLatestTransaction() (*TransactionData, error) {
 	// Only the latest transaction
 	offset := 1
-	transactions, err := e.listTransactions(&offset, nil, nil)
+	page := 1
+	transactions, err := e.ListTransactions(&offset, nil, nil, &page)
 	if err != nil || len(transactions) == 0 {
 		return nil, fmt.Errorf("error fetching the latest transaction: %v", err)
 	}
 	return &transactions[0], nil
 }
 
-// GetTransactionFromBlock fetches all transactions from the Uniswap V3 ETH-USDC pool between the specified block range.
-func (e *EtherscanClient) GetTransactionFromBlock(startBlock uint64, endBlock uint64) ([]TransactionData, error) {
-	return e.listTransactions(nil, &startBlock, &endBlock)
-}
-
-// listTransactions is a helper function to query transactions from the Uniswap V3 ETH-USDC pool based on optional parameters.
-func (e *EtherscanClient) listTransactions(offset *int, startBlock *uint64, endBlock *uint64) ([]TransactionData, error) {
+// listTransactions is a helper function to query transactions from the Uniswap V3 WETH-USDC pool based on optional parameters.
+func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endBlock *uint64, page *int) ([]TransactionData, error) {
 	params := url.Values{}
 
 	// Required parameters
@@ -169,6 +168,10 @@ func (e *EtherscanClient) listTransactions(offset *int, startBlock *uint64, endB
 
 	if endBlock != nil {
 		params.Add("endblock", strconv.FormatUint(*endBlock, 10))
+	}
+
+	if page != nil {
+		params.Add("page", strconv.Itoa(*page))
 	}
 
 	txURL := fmt.Sprintf("%s?%s", e.baseURL, params.Encode())
@@ -192,7 +195,7 @@ func (e *EtherscanClient) listTransactions(offset *int, startBlock *uint64, endB
 
 	transactions, err := convertResponseToTransactionData(result)
 	if err != nil {
-		return nil, fmt.Errorf("error converting response to transactionData: %v", err)
+		return nil, fmt.Errorf("error converting response to TransactionData: %v", err)
 	}
 
 	return transactions, nil
@@ -240,4 +243,46 @@ func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) 
 	}
 
 	return txData, nil
+}
+
+// GetBlockNumberByTimestamp fetches the block number closest(can be before of after) to the given timestamp.
+func (e *EtherscanClient) GetBlockNumberByTimestamp(timestamp time.Time, before bool) (uint64, error) {
+	closest := "after"
+	if before {
+		closest = "before"
+	}
+
+	// Prepare query parameters
+	params := url.Values{}
+	params.Add("module", "block")
+	params.Add("action", "getblocknobytime")
+	params.Add("timestamp", strconv.FormatInt(timestamp.Unix(), 10)) // base 10
+	params.Add("closest", closest)
+	params.Add("apikey", e.apiKey)
+
+	blockURL := fmt.Sprintf("%s?%s", e.baseURL, params.Encode())
+
+	resp, err := e.get(blockURL)
+	if err != nil {
+		return 0, fmt.Errorf("error making GET request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Decode the JSON response
+	var blockResp blockNumberResponse
+	if err := json.NewDecoder(resp.Body).Decode(&blockResp); err != nil {
+		return 0, fmt.Errorf("error parsing JSON response: %v", err)
+	}
+
+	// Check if the API returned a successful status
+	if blockResp.Status != "1" {
+		return 0, fmt.Errorf("Etherscan API error: %s - %s", blockResp.Status, blockResp.Message)
+	}
+
+	blockNumber, err := strconv.ParseUint(blockResp.Result, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("error converting block number: %v", err)
+	}
+
+	return blockNumber, nil
 }

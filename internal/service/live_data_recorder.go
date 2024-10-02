@@ -33,7 +33,7 @@ func NewLiveDataRecorder(dbQuerier db.Querier, transactionManager domain.Transac
 // Run starts the Recorder to execute tasks every 60 seconds.
 // It listens for context cancellation to gracefully shut down.
 func (ldr *LiveDataRecorder) Run(ctx context.Context) {
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 
 	log.Println("LiveDataRecorder started.")

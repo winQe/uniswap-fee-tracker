@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -23,7 +24,7 @@ func main() {
 	}
 
 	// Initializes DB connection pool
-	connPool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
+	connPool, err := pgxpool.New(context.Background(), fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", config.DBUser, config.DBPassword, config.DBAddress, config.DBPort, config.DBName))
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}

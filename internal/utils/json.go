@@ -27,8 +27,3 @@ func IsValidUUID(u string) bool {
 	_, err := uuid.Parse(u)
 	return err == nil
 }
-
-// ErrorResponse represents the structure for error responses.
-type ErrorResponse struct {
-	Error string `json:"error"`
-}

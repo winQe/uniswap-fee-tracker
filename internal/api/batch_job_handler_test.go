@@ -170,7 +170,7 @@ func TestCreateBatchJob_SetJobFailure(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, resp.Code)
 
 	// Parse the response body
-	var responseBody utils.ErrorResponse
+	var responseBody ErrorResponse
 	err = json.Unmarshal(resp.Body.Bytes(), &responseBody)
 	assert.NoError(t, err)
 

@@ -31,33 +31,43 @@ func NewBatchJobHandler(txDbQuery db.Querier, jobCache cache.JobsStore, txManage
 	}
 }
 
-// CreateBatchJob schedules a new batch job for historical data recording.
-// It accepts 'start_time' and 'end_time' as query parameters in Unix epoch seconds.
+// CreateBatchJob godoc
+// @Summary Create a new batch job
+// @Description Schedule a new batch job for historical data recording.
+// @Tags batch-jobs
+// @Accept  json
+// @Produce  json
+// @Param start_time query string true "Start time in Unix epoch seconds"
+// @Param end_time query string true "End time in Unix epoch seconds"
+// @Success 201 {object} cache.BatchJob
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /batch-jobs [post]
 func (bh *BatchJobHandler) CreateBatchJob(ctx *gin.Context) {
 	// Parse query parameters
 	startTimeStr := ctx.Query("start_time")
 	endTimeStr := ctx.Query("end_time")
 
 	if startTimeStr == "" || endTimeStr == "" {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Missing 'start_time' or 'end_time' query parameters"})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Missing 'start_time' or 'end_time' query parameters"})
 		return
 	}
 
 	// Convert query parameters to int64
 	startTime, err := utils.ParseUnixTime(startTimeStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid 'start_time' format. Must be Unix epoch time in seconds."})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid 'start_time' format. Must be Unix epoch time in seconds."})
 		return
 	}
 
 	endTime, err := utils.ParseUnixTime(endTimeStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid 'end_time' format. Must be Unix epoch time in seconds."})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid 'end_time' format. Must be Unix epoch time in seconds."})
 		return
 	}
 
 	if endTime <= startTime {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "End time must be after start time"})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "End time must be after start time"})
 		return
 	}
 
@@ -79,14 +89,14 @@ func (bh *BatchJobHandler) CreateBatchJob(ctx *gin.Context) {
 	// Serialize job to JSON
 	jobData, err := utils.SerializeToJSON(job)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Failed to serialize batch job data"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to serialize batch job data"})
 		return
 	}
 
 	// Store the batch job in Redis with status 'pending'
 	err = bh.jobCache.SetJob(jobID, jobData)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Failed to store batch job in Redis"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to store batch job in Redis"})
 		return
 	}
 
@@ -96,11 +106,21 @@ func (bh *BatchJobHandler) CreateBatchJob(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, job)
 }
 
-// GetBatchJob retrieves the status and details of a specific batch job.
+// GetBatchJob godoc
+// @Summary Get a specific batch job by ID
+// @Description Retrieve the status and details of a specific batch job using its unique ID.
+// @Tags Batch Jobs
+// @Accept  json
+// @Produce  json
+// @Param id path string true "Batch Job ID (UUID)"
+// @Success 200 {object} cache.BatchJob "Batch job details"
+// @Failure 400 {object} ErrorResponse "Invalid Batch Job ID"
+// @Failure 404 {object} ErrorResponse "Batch Job Not Found"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
 func (bh *BatchJobHandler) GetBatchJob(ctx *gin.Context) {
 	jobID := ctx.Param("id")
 	if !utils.IsValidUUID(jobID) {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid batch job ID format"})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid batch job ID format"})
 		return
 	}
 
@@ -108,28 +128,37 @@ func (bh *BatchJobHandler) GetBatchJob(ctx *gin.Context) {
 	jobData, err := bh.jobCache.GetJob(jobID)
 	if err != nil {
 		if err == cache.ErrJobNotFound {
-			ctx.JSON(http.StatusNotFound, utils.ErrorResponse{Error: "Batch job not found"})
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "Batch job not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Failed to retrieve batch job"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to retrieve batch job"})
 		return
 	}
 
 	var job cache.BatchJob
 	if err := utils.DeserializeFromJSON(jobData, &job); err != nil {
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Failed to parse batch job data"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to parse batch job data"})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, job)
 }
 
-// ListBatchJobs lists all batch jobs without pagination.
+// ListBatchJobs godoc
+// @Summary List all batch jobs
+// @Description Retrieve a list of all batch jobs, optionally filtered by status.
+// @Tags Batch Jobs
+// @Accept  json
+// @Produce  json
+// @Param status query string false "Filter jobs by status (e.g., pending, completed, failed)"
+// @Success 200 {array} BatchJob "List of batch jobs"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /batch-jobs [get]
 func (bh *BatchJobHandler) ListBatchJobs(ctx *gin.Context) {
 	// Fetch all batch jobs from Redis
 	allJobs, err := bh.jobCache.GetAllJobs()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Failed to retrieve batch jobs"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to retrieve batch jobs"})
 		return
 	}
 

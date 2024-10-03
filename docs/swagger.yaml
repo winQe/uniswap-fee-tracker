@@ -1,0 +1,217 @@
+definitions:
+  api.BatchJob:
+    properties:
+      created_at:
+        description: Creation timestamp
+        type: integer
+      end_time:
+        description: End time for the batch job (Unix epoch seconds)
+        type: integer
+      id:
+        description: Unique identifier for the batch job
+        type: string
+      result:
+        description: Result of the batch job
+        type: string
+      start_time:
+        description: Start time for the batch job (Unix epoch seconds)
+        type: integer
+      status:
+        description: Current status of the job (e.g., pending, completed, failed)
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: integer
+    type: object
+  api.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.TransactionResponse:
+    properties:
+      block_number:
+        description: The block number where the transaction was included
+        type: integer
+      eth_usdt_price:
+        description: The Ether to USDT price at the time of the transaction
+        type: number
+      gas_price_wei:
+        description: The gas price in Wei
+        type: integer
+      gas_used:
+        description: The amount of gas used by the transaction
+        type: integer
+      timestamp:
+        description: The timestamp of the transaction (Unix epoch time in seconds)
+        type: integer
+      transaction_fee_eth:
+        description: The transaction fee in Ether
+        type: number
+      transaction_fee_usdt:
+        description: The transaction fee in USDT
+        type: number
+      transaction_hash:
+        description: The hash of the transaction
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /batch-jobs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all batch jobs, optionally filtered by status.
+      parameters:
+      - description: Filter jobs by status (e.g., pending, completed, failed)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of batch jobs
+          schema:
+            items:
+              $ref: '#/definitions/api.BatchJob'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List all batch jobs
+      tags:
+      - Batch Jobs
+    post:
+      consumes:
+      - application/json
+      description: Schedule a new batch job for historical data recording.
+      parameters:
+      - description: Start time in Unix epoch seconds
+        in: query
+        name: start_time
+        required: true
+        type: string
+      - description: End time in Unix epoch seconds
+        in: query
+        name: end_time
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.BatchJob'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new batch job
+      tags:
+      - batch-jobs
+  /transactions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of transactions that occurred between the specified
+        start and end Unix epoch timestamps.
+      parameters:
+      - description: Start timestamp in Unix epoch seconds
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: End timestamp in Unix epoch seconds
+        in: query
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of transactions
+          schema:
+            items:
+              $ref: '#/definitions/api.TransactionResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get transactions within a timestamp range
+      tags:
+      - Transactions
+  /transactions/{hash}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific transaction using its hash.
+      parameters:
+      - description: Transaction Hash
+        in: path
+        name: hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TransactionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get transaction by hash
+      tags:
+      - transactions
+  /transactions/latest:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the latest transactions with an optional limit.
+      parameters:
+      - default: 10
+        description: Number of transactions to retrieve
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TransactionResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get latest transactions
+      tags:
+      - transactions
+swagger: "2.0"

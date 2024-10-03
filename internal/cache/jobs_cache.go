@@ -7,15 +7,29 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// BatchJob represents the response structure for a batch job.
+// BatchJob represents a batch job for historical data recording.
+// swagger:model
 type BatchJob struct {
-	ID        string `json:"id"`     // UUID of the batch job
-	Status    string `json:"status"` // Status: pending, running, completed, failed
-	StartTime int64  `json:"start_time"`
-	EndTime   int64  `json:"end_time"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
-	Result    string `json:"result"`
+	// Unique identifier for the batch job
+	ID string `json:"id"`
+
+	// Current status of the job (e.g., pending, completed, failed)
+	Status string `json:"status"`
+
+	// Start time for the batch job (Unix epoch seconds)
+	StartTime int64 `json:"start_time"`
+
+	// End time for the batch job (Unix epoch seconds)
+	EndTime int64 `json:"end_time"`
+
+	// Creation timestamp
+	CreatedAt int64 `json:"created_at"`
+
+	// Last update timestamp
+	UpdatedAt int64 `json:"updated_at"`
+
+	// Result of the batch job
+	Result string `json:"result"`
 }
 
 // JobsCache keeps track of all pending batch jobs within the TTL

@@ -42,7 +42,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.BatchJob"
+                                "$ref": "#/definitions/cache.BatchJob"
                             }
                         }
                     },
@@ -86,11 +86,61 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.BatchJob"
+                            "$ref": "#/definitions/cache.BatchJob"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/batch-jobs/{id}": {
+            "get": {
+                "description": "Retrieve the status and details of a specific batch job using its unique ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Batch Jobs"
+                ],
+                "summary": "Get a specific batch job by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Batch Job ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Batch job details",
+                        "schema": {
+                            "$ref": "#/definitions/cache.BatchJob"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Batch Job ID",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Batch Job Not Found",
                         "schema": {
                             "$ref": "#/definitions/api.ErrorResponse"
                         }
@@ -251,39 +301,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.BatchJob": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "Creation timestamp",
-                    "type": "integer"
-                },
-                "end_time": {
-                    "description": "End time for the batch job (Unix epoch seconds)",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "Unique identifier for the batch job",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result of the batch job",
-                    "type": "string"
-                },
-                "start_time": {
-                    "description": "Start time for the batch job (Unix epoch seconds)",
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "Current status of the job (e.g., pending, completed, failed)",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "description": "Last update timestamp",
-                    "type": "integer"
-                }
-            }
-        },
         "api.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -326,6 +343,39 @@ const docTemplate = `{
                 "transaction_hash": {
                     "description": "The hash of the transaction",
                     "type": "string"
+                }
+            }
+        },
+        "cache.BatchJob": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "integer"
+                },
+                "end_time": {
+                    "description": "End time for the batch job (Unix epoch seconds)",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "Unique identifier for the batch job",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result of the batch job",
+                    "type": "string"
+                },
+                "start_time": {
+                    "description": "Start time for the batch job (Unix epoch seconds)",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Current status of the job (e.g., pending, completed, failed)",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "integer"
                 }
             }
         }

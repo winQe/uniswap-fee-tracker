@@ -1,28 +1,4 @@
 definitions:
-  api.BatchJob:
-    properties:
-      created_at:
-        description: Creation timestamp
-        type: integer
-      end_time:
-        description: End time for the batch job (Unix epoch seconds)
-        type: integer
-      id:
-        description: Unique identifier for the batch job
-        type: string
-      result:
-        description: Result of the batch job
-        type: string
-      start_time:
-        description: Start time for the batch job (Unix epoch seconds)
-        type: integer
-      status:
-        description: Current status of the job (e.g., pending, completed, failed)
-        type: string
-      updated_at:
-        description: Last update timestamp
-        type: integer
-    type: object
   api.ErrorResponse:
     properties:
       error:
@@ -55,6 +31,30 @@ definitions:
         description: The hash of the transaction
         type: string
     type: object
+  cache.BatchJob:
+    properties:
+      created_at:
+        description: Creation timestamp
+        type: integer
+      end_time:
+        description: End time for the batch job (Unix epoch seconds)
+        type: integer
+      id:
+        description: Unique identifier for the batch job
+        type: string
+      result:
+        description: Result of the batch job
+        type: string
+      start_time:
+        description: Start time for the batch job (Unix epoch seconds)
+        type: integer
+      status:
+        description: Current status of the job (e.g., pending, completed, failed)
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: integer
+    type: object
 info:
   contact: {}
 paths:
@@ -75,7 +75,7 @@ paths:
           description: List of batch jobs
           schema:
             items:
-              $ref: '#/definitions/api.BatchJob'
+              $ref: '#/definitions/cache.BatchJob'
             type: array
         "500":
           description: Internal Server Error
@@ -105,7 +105,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.BatchJob'
+            $ref: '#/definitions/cache.BatchJob'
         "400":
           description: Bad Request
           schema:
@@ -117,6 +117,40 @@ paths:
       summary: Create a new batch job
       tags:
       - batch-jobs
+  /batch-jobs/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the status and details of a specific batch job using its
+        unique ID.
+      parameters:
+      - description: Batch Job ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch job details
+          schema:
+            $ref: '#/definitions/cache.BatchJob'
+        "400":
+          description: Invalid Batch Job ID
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Batch Job Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a specific batch job by ID
+      tags:
+      - Batch Jobs
   /transactions:
     get:
       consumes:

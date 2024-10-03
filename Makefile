@@ -1,4 +1,7 @@
-.PHONY: live_recorder test new_migration migrateup migratedown migrateup1 migratedown1
+.PHONY: api live_recorder test new_migration migrateup migratedown migrateup1 migratedown1 swagger
+
+api:
+	go run cmd/api/main.go
 
 live_recorder:
 	go run cmd/live_data_recorder/main.go
@@ -24,4 +27,7 @@ migratedown:
 
 migratedown1:
 	migrate -path internal/db/migrations -database "$(DB_URL)" -verbose down 1
+
+swagger:
+	swag init -g internal/api/docs.go
 

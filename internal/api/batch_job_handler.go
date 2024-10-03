@@ -117,6 +117,7 @@ func (bh *BatchJobHandler) CreateBatchJob(ctx *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid Batch Job ID"
 // @Failure 404 {object} ErrorResponse "Batch Job Not Found"
 // @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /batch-jobs/{id} [get]
 func (bh *BatchJobHandler) GetBatchJob(ctx *gin.Context) {
 	jobID := ctx.Param("id")
 	if !utils.IsValidUUID(jobID) {
@@ -151,7 +152,7 @@ func (bh *BatchJobHandler) GetBatchJob(ctx *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param status query string false "Filter jobs by status (e.g., pending, completed, failed)"
-// @Success 200 {array} BatchJob "List of batch jobs"
+// @Success 200 {array} cache.BatchJob "List of batch jobs"
 // @Failure 500 {object} ErrorResponse "Internal Server Error"
 // @Router /batch-jobs [get]
 func (bh *BatchJobHandler) ListBatchJobs(ctx *gin.Context) {

@@ -33,7 +33,7 @@ func NewBatchJobHandler(txDbQuery db.Querier, jobCache cache.JobsStore, txManage
 
 // CreateBatchJob godoc
 // @Summary Create a new batch job
-// @Description Schedule a new batch job for historical data recording.
+// @Description Schedule a new batch job for historical data recording. Max timestamp range is 1 week
 // @Tags batch-jobs
 // @Accept  json
 // @Produce  json
@@ -71,6 +71,10 @@ func (bh *BatchJobHandler) CreateBatchJob(ctx *gin.Context) {
 		return
 	}
 
+	if endTime-startTime > 60*60*24*7 { // One week
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Timestamp duration must be less than a week"})
+		return
+	}
 	// Generate a unique ID for the batch job
 	jobID := uuid.New().String()
 	currentTime := time.Now().Unix()

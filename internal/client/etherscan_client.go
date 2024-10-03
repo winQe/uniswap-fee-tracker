@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/winQe/uniswap-fee-tracker/internal/utils"
 	"golang.org/x/time/rate"
 )
 
@@ -245,7 +246,7 @@ func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) 
 		return nil, fmt.Errorf("error converting GasPrice to big.Int")
 	}
 
-	unixTime, err := strconv.ParseInt(details.TimeStamp, 10, 64)
+	unixTime, err := utils.ParseUnixTime(details.TimeStamp)
 	if err != nil {
 		return nil, fmt.Errorf("error converting timestamp: %v", err)
 	}

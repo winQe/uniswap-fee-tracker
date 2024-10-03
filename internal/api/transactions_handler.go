@@ -117,12 +117,12 @@ func (th *TransactionHandler) getTransactionByTimestamp(ctx *gin.Context) {
 	}
 
 	// Parse timestamps as Unix time (seconds)
-	startUnix, err := strconv.ParseInt(startStr, 10, 64)
+	startUnix, err := utils.ParseUnixTime(startStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start timestamp. Use Unix time in seconds."})
 		return
 	}
-	endUnix, err := strconv.ParseInt(endStr, 10, 64)
+	endUnix, err := utils.ParseUnixTime(endStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end timestamp. Use Unix time in seconds."})
 		return

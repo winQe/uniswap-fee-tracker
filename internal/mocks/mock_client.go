@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/mock"
+
 	"github.com/winQe/uniswap-fee-tracker/internal/client"
+	"github.com/winQe/uniswap-fee-tracker/internal/types"
 )
 
 // MockPriceClient is a mock implementation of the PriceClient interface.
@@ -24,7 +26,7 @@ type MockTransactionClient struct {
 }
 
 // ListTransactions mocks the ListTransactions method.
-func (m *MockTransactionClient) ListTransactions(batchSize *uint64, startBlock *uint64, endBlock *uint64, page *int) ([]client.TransactionData, error) {
+func (m *MockTransactionClient) ListTransactions(batchSize *uint64, startBlock *uint64, endBlock *uint64, page *int) ([]types.TransactionData, error) {
 	args := m.Called(batchSize, startBlock, endBlock, page)
-	return args.Get(0).([]client.TransactionData), args.Error(1)
+	return args.Get(0).([]types.TransactionData), args.Error(1)
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/winQe/uniswap-fee-tracker/internal/client"
+	"github.com/winQe/uniswap-fee-tracker/internal/types"
 	"github.com/winQe/uniswap-fee-tracker/internal/utils"
 )
 
@@ -36,7 +37,7 @@ func (tm *TransactionManager) GetLatestBlockNumber() (uint64, error) {
 
 // GetTransaction queries transaction by hash and calculates its transaction price in USDT
 // It utilizes concurrent workers to efficiently retrieve and handle transactions in batches.
-func (tm *TransactionManager) GetTransaction(hash string) (*TxWithPrice, error) {
+func (tm *TransactionManager) GetTransaction(hash string) (*types.TxWithPrice, error) {
 	txData, err := tm.transactionClient.GetTransactionReceipt(hash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction by hash from API client: %v", err)
@@ -47,14 +48,14 @@ func (tm *TransactionManager) GetTransaction(hash string) (*TxWithPrice, error) 
 
 // BatchProcessTransactions fetches and processes transactions within the given block range.
 // It utilizes concurrent workers to fetch and process transactions.
-func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlock uint64, ctx context.Context) ([]TxWithPrice, error) {
-	var allTransactions []TxWithPrice
+func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlock uint64, ctx context.Context) ([]types.TxWithPrice, error) {
+	var allTransactions []types.TxWithPrice
 
 	batchSize := 100
 	numWorkers := 10
 
 	pages := make(chan int)
-	results := make(chan TxWithPrice)
+	results := make(chan types.TxWithPrice)
 	stopSignal := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -169,7 +170,7 @@ func (tm *TransactionManager) BatchProcessTransactions(startBlock uint64, endBlo
 }
 
 // processTransaction fetches transaction receipt and calculates fees
-func (tm *TransactionManager) processTransaction(tx client.TransactionData) (*TxWithPrice, error) {
+func (tm *TransactionManager) processTransaction(tx types.TransactionData) (*types.TxWithPrice, error) {
 	// Fetch ETH-USDT conversion rate at the transaction's timestamp
 	ethUSDTConversionRate, err := tm.priceManager.GetETHUSDT(tx.Timestamp)
 	if err != nil {
@@ -180,15 +181,15 @@ func (tm *TransactionManager) processTransaction(tx client.TransactionData) (*Tx
 	feeETH := utils.ConvertToETH(tx.GasPriceWei) * float64(tx.GasUsed)
 	feeUSDT := feeETH * ethUSDTConversionRate
 
-	return &TxWithPrice{
-		tx,
-		ethUSDTConversionRate,
-		feeETH,
-		feeUSDT,
+	return &types.TxWithPrice{
+		TransactionData:    tx,
+		ETHUSDTPrice:       ethUSDTConversionRate,
+		TransactionFeeETH:  feeETH,
+		TransactionFeeUSDT: feeUSDT,
 	}, nil
 }
 
-func (tm *TransactionManager) BatchProcessTransactionsByTimestamp(startTime time.Time, endTime time.Time, ctx context.Context) ([]TxWithPrice, error) {
+func (tm *TransactionManager) BatchProcessTransactionsByTimestamp(startTime time.Time, endTime time.Time, ctx context.Context) ([]types.TxWithPrice, error) {
 	// Get starting and ending block number that is WITHIN the timestamp (after start and before end)
 	startBlock, err := tm.transactionClient.GetBlockNumberByTimestamp(startTime, false)
 	if err != nil {

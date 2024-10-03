@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/winQe/uniswap-fee-tracker/internal/types"
 	"github.com/winQe/uniswap-fee-tracker/internal/utils"
 	"golang.org/x/time/rate"
 )
@@ -80,7 +81,7 @@ func NewEtherscanClient(apiKey string, poolAddress string) *EtherscanClient {
 // GetTransactionReceipt fetches the transaction receipt based on the txHash
 // TODO: Needs to verify whether transaction actually belongs in the WETH-USDT Pool
 // TODO: Timestamp from eth_getBlockByNumber
-func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, error) {
+func (e *EtherscanClient) GetTransactionReceipt(hash string) (*types.TransactionData, error) {
 	params := url.Values{}
 
 	// https://docs.etherscan.io/api-endpoints/geth-parity-proxy#eth_gettransactionbyhash
@@ -126,7 +127,7 @@ func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, 
 	}
 
 	// Construct the TransactionData and return
-	txData := &TransactionData{
+	txData := &types.TransactionData{
 		Hash:        txHash,
 		BlockNumber: blockNumber,
 		GasUsed:     gasUsed,
@@ -137,7 +138,7 @@ func (e *EtherscanClient) GetTransactionReceipt(hash string) (*TransactionData, 
 }
 
 // GetLatestTransaction fetches the latest transaction from the Uniswap V3 ETH-USDC pool.
-func (e *EtherscanClient) GetLatestTransaction() (*TransactionData, error) {
+func (e *EtherscanClient) GetLatestTransaction() (*types.TransactionData, error) {
 	// Only the latest transaction
 	offset := 1
 	page := 1
@@ -149,7 +150,7 @@ func (e *EtherscanClient) GetLatestTransaction() (*TransactionData, error) {
 }
 
 // listTransactions is a helper function to query transactions from the Uniswap V3 WETH-USDC pool based on optional parameters.
-func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endBlock *uint64, page *int) ([]TransactionData, error) {
+func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endBlock *uint64, page *int) ([]types.TransactionData, error) {
 	params := url.Values{}
 
 	// Required parameters
@@ -211,8 +212,8 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 }
 
 // Adjust convertResponseToTransactionData to accept tokenTxDetails as a parameter
-func convertResponseToTransactionData(details []tokenTxDetails) ([]TransactionData, error) {
-	var transactions []TransactionData
+func convertResponseToTransactionData(details []tokenTxDetails) ([]types.TransactionData, error) {
+	var transactions []types.TransactionData
 
 	for _, detail := range details {
 		txData, err := convertToTransactionData(detail)
@@ -228,7 +229,7 @@ func convertResponseToTransactionData(details []tokenTxDetails) ([]TransactionDa
 }
 
 // Convert tokenTxDetails to TransactionData
-func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) {
+func convertToTransactionData(details tokenTxDetails) (*types.TransactionData, error) {
 	blockNumber, err := strconv.ParseUint(details.BlockNumber, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("error converting BlockNumber: %v", err)
@@ -252,7 +253,7 @@ func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) 
 	}
 	txTime := time.Unix(unixTime, 0)
 
-	txData := &TransactionData{
+	txData := &types.TransactionData{
 		BlockNumber: blockNumber,
 		Hash:        details.Hash,
 		GasUsed:     gasUsed,

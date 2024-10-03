@@ -41,6 +41,7 @@ func main() {
 	etherscanClient := client.NewEtherscanClient(config.EtherscanAPIKey, config.WETHUSDCPoolAddress)
 	txManager := domain.NewTransactionManager(etherscanClient, priceManager)
 
+	// Initialize batch job relatd dependencies
 	jobsCache := cache.NewJobCache(config.RedisURL, config.RedisPassword)
 	batchDataProcessor := service.NewBatchDataProcessor(dbQuerier, jobsCache, txManager)
 

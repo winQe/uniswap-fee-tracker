@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/winQe/uniswap-fee-tracker/internal/types"
 	"golang.org/x/time/rate"
 )
 
@@ -224,35 +226,45 @@ func TestListTransactions(t *testing.T) {
 	transactions, err := client.ListTransactions(&offset, &startBlock, &endBlock, nil)
 	assert.NoError(t, err, "Expected no error from listTransactions")
 
+	// Parse the Unix timestamps from the JSON to time.Time
+	timestamp1 := time.Unix(1727793983, 0).Local()
+	timestamp2 := time.Unix(1727793983, 0).Local()
+	timestamp3 := time.Unix(1727793947, 0).Local()
+	timestamp4 := time.Unix(1727793947, 0).Local()
+
 	expectedGasPrice1, _ := new(big.Int).SetString("34768791303", 10)
 	expectedGasPrice2, _ := new(big.Int).SetString("34768791303", 10)
 	expectedGasPrice3, _ := new(big.Int).SetString("24087796268", 10)
 	expectedGasPrice4, _ := new(big.Int).SetString("24087796268", 10)
 
-	expectedTransactions := []TransactionData{
+	expectedTransactions := []types.TransactionData{
 		{
 			BlockNumber: 20871331,
 			Hash:        "0xf508343089e789298f09e941e7c76bc500809e3f203b17d4d5769e263fa4d3f1",
 			GasUsed:     121242,
 			GasPriceWei: expectedGasPrice1,
+			Timestamp:   timestamp1,
 		},
 		{
 			BlockNumber: 20871331,
 			Hash:        "0xf508343089e789298f09e941e7c76bc500809e3f203b17d4d5769e263fa4d3f1",
 			GasUsed:     121242,
 			GasPriceWei: expectedGasPrice2,
+			Timestamp:   timestamp2,
 		},
 		{
 			BlockNumber: 20871328,
 			Hash:        "0x8a4ed869c6b0ba8ed9543ec13f634a8105523eed2848a699c0b2150ae694bfc8",
 			GasUsed:     341965,
 			GasPriceWei: expectedGasPrice3,
+			Timestamp:   timestamp3,
 		},
 		{
 			BlockNumber: 20871328,
 			Hash:        "0x8a4ed869c6b0ba8ed9543ec13f634a8105523eed2848a699c0b2150ae694bfc8",
 			GasUsed:     341965,
 			GasPriceWei: expectedGasPrice4,
+			Timestamp:   timestamp4,
 		},
 	}
 

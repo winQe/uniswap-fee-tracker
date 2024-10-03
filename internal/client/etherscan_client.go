@@ -191,13 +191,7 @@ func (e *EtherscanClient) ListTransactions(offset *int, startBlock *uint64, endB
 
 	// Check for success in the API response (status == "1")
 	if result.Status != "1" {
-		// Attempt to extract the error message from Result
-		var errorMsg string
-		if err := json.Unmarshal(result.Result, &errorMsg); err != nil {
-			// If Result is not a string, return the original message
-			return nil, fmt.Errorf("Etherscan server error: %s", result.Message)
-		}
-		return nil, fmt.Errorf("Etherscan server error: %s", errorMsg)
+		return nil, fmt.Errorf("Etherscan server error: %s", result.Message)
 	}
 
 	// Unmarshal the Result into []tokenTxDetails

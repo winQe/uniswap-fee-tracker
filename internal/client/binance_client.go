@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -47,23 +48,45 @@ func (k *KlineClient) GetETHUSDT(timestamp time.Time) (*KlineData, error) {
 		return nil, fmt.Errorf("rate limiter error: %v", err)
 	}
 
-	// Prepare the Kline request
-	klinesService := k.binanceClient.NewKlinesService()
-	klinesService.Symbol("ETHUSDT").
-		Interval("5m").
-		StartTime(timestamp.UnixMilli()).
-		Limit(1) // Fetch only the latest kline
+	// Define maximum number of retries
+	maxRetries := 3
+	var klines []*binance.Kline
+	var err error
 
-	klines, err := klinesService.Do(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("error fetching klines: %v", err)
+	// Retry loop
+	for attempts := 0; attempts < maxRetries; attempts++ {
+		log.Printf("Attempt %d of fetching klines data from Binance API\n", attempts+1)
+		// Respect the rate limit
+		if err := k.rateLimiter.Wait(context.Background()); err != nil {
+			return nil, fmt.Errorf("rate limiter error: %v", err)
+		}
+
+		// Prepare the Kline request
+		klinesService := k.binanceClient.NewKlinesService()
+		klinesService.Symbol("ETHUSDT").
+			Interval("15m").
+			EndTime(timestamp.UnixMilli()).
+			Limit(1) // Fetch only the latest kline
+
+		klines, err = klinesService.Do(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("error fetching klines: %v", err)
+		}
+
+		// If klines data is returned, break the loop
+		if len(klines) > 0 {
+			break
+		}
+
+		// If no data, wait for a second before retrying
+		time.Sleep(1 * time.Second)
 	}
 
-	// Check if klines are returned
+	// Check if klines are still empty after retries
 	if len(klines) == 0 {
-		return nil, fmt.Errorf("no kline data returned")
+		log.Printf("timstamp: %d", timestamp.UnixMilli())
+		return nil, fmt.Errorf("no kline data returned after %d attempts", maxRetries)
 	}
-
 	// Extract the close price from the first kline
 	closePriceStr := klines[0].Close
 	closePrice, err := strconv.ParseFloat(closePriceStr, 64)

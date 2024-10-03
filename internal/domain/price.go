@@ -47,7 +47,7 @@ func (p *PriceManager) GetETHUSDT(timestamp time.Time) (float64, error) {
 	}
 	p.mu.RUnlock()
 
-	// Cache miss or lastPrice is stale, proceed to check the cache
+	// lastPrice is stale, proceed to check the cache
 	price, err := p.rateCache.GetRate(timestamp)
 	if err == nil {
 		// Update lastPrice with the fetched rate

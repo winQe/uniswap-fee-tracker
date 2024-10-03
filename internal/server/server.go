@@ -7,22 +7,29 @@ import (
 	"github.com/winQe/uniswap-fee-tracker/internal/api"
 )
 
+// Server represents the API server and route handlers
 type Server struct {
-	port string
+	port            string
+	txHandler       *api.TransactionHandler
+	batchJobHandler *api.BatchJobHandler
 }
 
-func NewServer(port string) *Server {
+// Server represents the API server and route handlers
+func NewServer(port string, txHandler *api.TransactionHandler, batchJobHandler *api.BatchJobHandler) *Server {
 	return &Server{
-		port: port,
+		port:            port,
+		txHandler:       txHandler,
+		batchJobHandler: batchJobHandler,
 	}
 }
 
+// Run starts the HTTP server, registers API routes, and binds the server to the specified port.
 func (s *Server) Run() error {
 	router := gin.Default()
 
 	v1 := router.Group("/api/v1")
 	{
-		api.RegisterRoutes(v1, nil, nil)
+		api.RegisterRoutes(v1, s.txHandler, s.batchJobHandler)
 	}
 
 	serverAddr := fmt.Sprintf("0.0.0.0:%s", s.port)

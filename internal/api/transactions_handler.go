@@ -39,7 +39,7 @@ func (th *TransactionHandler) getTransactionHash(ctx *gin.Context) {
 	txHash = utils.SanitizeTransactionHash(txHash)
 
 	if txHash == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing transaction hash"})
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid or missing transaction hash"})
 		return
 	}
 
@@ -47,11 +47,11 @@ func (th *TransactionHandler) getTransactionHash(ctx *gin.Context) {
 	transaction, err := th.txDbQuery.GetTransactionByHash(ctx, txHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+			ctx.JSON(http.StatusNotFound, utils.ErrorResponse{Error: "Transaction not found"})
 			return
 		}
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Internal server error"})
 		return
 	}
 
@@ -86,7 +86,7 @@ func (th *TransactionHandler) getLatestTransactions(ctx *gin.Context) {
 
 	transactions, err := th.txDbQuery.GetLatestTransactions(ctx, limit)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Internal server error"})
 		return
 	}
 
@@ -112,19 +112,19 @@ func (th *TransactionHandler) getTransactionByTimestamp(ctx *gin.Context) {
 	startStr := ctx.Query("start")
 	endStr := ctx.Query("end")
 	if startStr == "" || endStr == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Start and end timestamps are required"})
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Start and end timestamps are required"})
 		return
 	}
 
 	// Parse timestamps as Unix time (seconds)
 	startUnix, err := utils.ParseUnixTime(startStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start timestamp. Use Unix time in seconds."})
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid start timestamp. Use Unix time in seconds."})
 		return
 	}
 	endUnix, err := utils.ParseUnixTime(endStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end timestamp. Use Unix time in seconds."})
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "Invalid end timestamp. Use Unix time in seconds."})
 		return
 	}
 
@@ -133,7 +133,7 @@ func (th *TransactionHandler) getTransactionByTimestamp(ctx *gin.Context) {
 	endTime := time.Unix(endUnix, 0)
 
 	if endTime.Before(startTime) {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "End timestamp must be after start timestamp"})
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{Error: "End timestamp must be after start timestamp"})
 		return
 	}
 
@@ -143,7 +143,7 @@ func (th *TransactionHandler) getTransactionByTimestamp(ctx *gin.Context) {
 	}
 	transactions, err := th.txDbQuery.GetTransactionsByTimeRange(ctx, params)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{Error: "Internal server error"})
 		return
 	}
 

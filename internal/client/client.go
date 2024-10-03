@@ -30,4 +30,5 @@ type TransactionClient interface {
 	GetTransactionReceipt(hash string) (*TransactionData, error)
 	GetLatestTransaction() (*TransactionData, error)
 	ListTransactions(offset *int, startBlock *uint64, endBlock *uint64, page *int) ([]TransactionData, error)
+	GetBlockNumberByTimestamp(timestamp time.Time, before bool) (uint64, error)
 }

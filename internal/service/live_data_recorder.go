@@ -70,8 +70,9 @@ func (ldr *LiveDataRecorder) recordNewTransactions() {
 			return
 		}
 
+		// Insert to DB
+		// TODO: Try bulk insert if sqlc supports it
 		for _, tx := range transactions {
-			// Example: Insert transaction into the database.
 			err := ldr.dbQuerier.InsertTransaction(context.Background(), db.InsertTransactionParams{
 				TransactionHash:    tx.Hash,
 				BlockNumber:        int64(tx.BlockNumber),

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/winQe/uniswap-fee-tracker/internal/client"
 	"github.com/winQe/uniswap-fee-tracker/internal/utils"
@@ -185,4 +186,19 @@ func (tm *TransactionManager) processTransaction(tx client.TransactionData) (*Tx
 		feeETH,
 		feeUSDT,
 	}, nil
+}
+
+func (tm *TransactionManager) BatchProcessTransactionsByTimestamp(startTime time.Time, endTime time.Time, ctx context.Context) ([]TxWithPrice, error) {
+	// Get starting and ending block number that is WITHIN the timestamp (after start and before end)
+	startBlock, err := tm.transactionClient.GetBlockNumberByTimestamp(startTime, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the starting block number: %v", err)
+	}
+
+	endBlock, err := tm.transactionClient.GetBlockNumberByTimestamp(endTime, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the ending block number: %v", err)
+	}
+
+	return tm.BatchProcessTransactions(startBlock, endBlock, ctx)
 }

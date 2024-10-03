@@ -17,6 +17,7 @@ type TransactionManagerInterface interface {
 	GetLatestBlockNumber() (uint64, error)
 	GetTransaction(hash string) (*TxWithPrice, error)
 	BatchProcessTransactions(startBlock uint64, endBlock uint64, ctx context.Context) ([]TxWithPrice, error)
+	BatchProcessTransactionsByTimestamp(startTime time.Time, endTime time.Time, ctx context.Context) ([]TxWithPrice, error)
 }
 
 // TxWithPrice holds the processed transaction data

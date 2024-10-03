@@ -87,7 +87,7 @@ func (bdp *BatchDataProcessorImpl) updateJobStatus(jobID, status, result string)
 		return err
 	}
 
-	var job cache.BatchJobResponse
+	var job cache.BatchJob
 	if err := utils.DeserializeFromJSON(jobData, &job); err != nil {
 		log.Printf("Failed to deserialize job %s data: %v", jobID, err)
 		return err

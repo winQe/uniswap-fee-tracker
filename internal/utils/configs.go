@@ -1,35 +1,75 @@
 package utils
 
 import (
-	"github.com/spf13/viper"
+	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	DBUser              string `mapstructure:"DB_USER"`
-	DBPassword          string `mapstructure:"DB_PASSWORD"`
-	DBAddress           string `mapstructure:"DB_ADDRESS"`
-	DBPort              string `mapstructure:"DB_PORT"`
-	DBName              string `mapstructure:"DB_NAME"`
-	RedisURL            string `mapstructure:"REDIS_URL"`
-	RedisPassword       string `mapstructure:"REDIS_PASSWORD"`
-	EtherscanAPIKey     string `mapstructure:"ETHERSCAN_API_KEY"`
-	ServerPort          string `mapstructure:"SERVER_PORT"`
-	WETHUSDCPoolAddress string `mapstructure:"WETH_USDT_POOL_ADDRESS"`
+	DBUser              string
+	DBPassword          string
+	DBAddress           string
+	DBPort              string
+	DBName              string
+	RedisURL            string
+	RedisPassword       string
+	EtherscanAPIKey     string
+	ServerPort          string
+	WETHUSDCPoolAddress string
 }
 
-// LoadConfig reads configuration from file or environment variables.
-func LoadConfig() (config Config, err error) {
-	viper.AddConfigPath(".") // can call multiple times to add more search path
-	viper.SetConfigFile(".env")
+// LoadConfig reads configuration from a .env file and environment variables.
+func LoadConfig() (Config, error) {
+	var config Config
 
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
+	// Load .env file if it exists
+	err := godotenv.Load()
 	if err != nil {
-		return
+		fmt.Println("No .env file found. Proceeding with environment variables.")
 	}
 
-	err = viper.Unmarshal(&config)
+	// Populate Config struct from environment variables
+	config.DBUser = os.Getenv("DB_USER")
+	config.DBPassword = os.Getenv("DB_PASSWORD")
+	config.DBAddress = os.Getenv("DB_ADDRESS")
+	config.DBPort = os.Getenv("DB_PORT")
+	config.DBName = os.Getenv("DB_NAME")
+	config.RedisURL = os.Getenv("REDIS_URL")
+	config.RedisPassword = os.Getenv("REDIS_PASSWORD")
+	config.EtherscanAPIKey = os.Getenv("ETHERSCAN_API_KEY")
+	config.ServerPort = os.Getenv("SERVER_PORT")
+	config.WETHUSDCPoolAddress = os.Getenv("WETH_USDT_POOL_ADDRESS")
 
-	return
+	// Validate required fields
+	if config.DBUser == "" {
+		return config, fmt.Errorf("DB_USER is required")
+	}
+	if config.DBPassword == "" {
+		return config, fmt.Errorf("DB_PASSWORD is required")
+	}
+	if config.DBAddress == "" {
+		return config, fmt.Errorf("DB_ADDRESS is required")
+	}
+	if config.DBPort == "" {
+		return config, fmt.Errorf("DB_PORT is required")
+	}
+	if config.DBName == "" {
+		return config, fmt.Errorf("DB_NAME is required")
+	}
+	if config.RedisURL == "" {
+		return config, fmt.Errorf("REDIS_URL is required")
+	}
+	if config.EtherscanAPIKey == "" {
+		return config, fmt.Errorf("ETHERSCAN_API_KEY is required")
+	}
+	if config.ServerPort == "" {
+		return config, fmt.Errorf("SERVER_PORT is required")
+	}
+	if config.WETHUSDCPoolAddress == "" {
+		return config, fmt.Errorf("WETH_USDT_POOL_ADDRESS is required")
+	}
+
+	return config, nil
 }

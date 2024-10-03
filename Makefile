@@ -1,4 +1,10 @@
-.PHONY: new_migration migrateup migratedown migrateup1 migratedown1
+.PHONY: live_recorder test new_migration migrateup migratedown migrateup1 migratedown1
+
+live_recorder:
+	go run cmd/live_data_recorder/main.go
+
+test:
+	go test -race -v ./...
 
 new_migration:
 	@if [ -z "$(name)" ]; then \

@@ -253,7 +253,7 @@ func convertToTransactionData(details tokenTxDetails) (*TransactionData, error) 
 
 	unixTime, err := strconv.ParseInt(details.TimeStamp, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("error converting timestamp:", err)
+		return nil, fmt.Errorf("error converting timestamp: %v", err)
 	}
 	txTime := time.Unix(unixTime, 0)
 

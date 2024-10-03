@@ -33,7 +33,7 @@ func NewLiveDataRecorder(dbQuerier db.Querier, transactionManager domain.Transac
 // Run starts the Recorder to execute tasks every 60 seconds.
 // It listens for context cancellation to gracefully shut down.
 func (ldr *LiveDataRecorder) Run(ctx context.Context) {
-	ticker := time.NewTicker(20 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
 	log.Println("LiveDataRecorder started.")
@@ -51,7 +51,7 @@ func (ldr *LiveDataRecorder) Run(ctx context.Context) {
 
 // executeTask contains the logic to fetch and process new transactions.
 func (ldr *LiveDataRecorder) recordNewTransactions() {
-	log.Println("Fetching and processing transactions.")
+	log.Println("Fetching and processing new transactions.")
 
 	latestBlock, err := ldr.transactionManager.GetLatestBlockNumber()
 	if err != nil {

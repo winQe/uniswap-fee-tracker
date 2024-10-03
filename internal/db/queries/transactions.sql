@@ -53,3 +53,8 @@ FROM transactions
 WHERE timestamp BETWEEN $1 AND $2
 ORDER BY timestamp DESC;
 
+-- name: GetLatestTransactions :many
+SELECT *
+FROM transactions
+ORDER BY timestamp DESC
+LIMIT $1;

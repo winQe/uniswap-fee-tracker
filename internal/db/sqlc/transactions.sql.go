@@ -12,6 +12,42 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getLatestTransactions = `-- name: GetLatestTransactions :many
+SELECT transaction_hash, block_number, timestamp, gas_used, gas_price_wei, transaction_fee_eth, transaction_fee_usdt, eth_usdt_price
+FROM transactions
+ORDER BY timestamp DESC
+LIMIT $1
+`
+
+func (q *Queries) GetLatestTransactions(ctx context.Context, limit int32) ([]Transactions, error) {
+	rows, err := q.db.Query(ctx, getLatestTransactions, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transactions
+	for rows.Next() {
+		var i Transactions
+		if err := rows.Scan(
+			&i.TransactionHash,
+			&i.BlockNumber,
+			&i.Timestamp,
+			&i.GasUsed,
+			&i.GasPriceWei,
+			&i.TransactionFeeEth,
+			&i.TransactionFeeUsdt,
+			&i.EthUsdtPrice,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTransactionByHash = `-- name: GetTransactionByHash :one
 SELECT
     transaction_hash,

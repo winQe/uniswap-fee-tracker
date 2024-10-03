@@ -93,6 +93,7 @@ Create a `.env` file in the root directory based on the provided .env.sample
 Ensure that there's no port collision
 
 ### Build and Run with docker-compose
+The API server and the live data recorder are two separate processes (and thus binaries). This docker compose script will run both at the same time.
 ```bash
 docker-compose up --build
 ```
@@ -141,7 +142,7 @@ make test
 
 ## API Documentation
 Access the interactive Swagger UI to explore and test the API endpoints:
-/api/v1/swagger/index.html#/
+http://localhost:8080/api/v1/swagger/index.html#/
 
 ## References
 * https://goethereumbook.org/en/

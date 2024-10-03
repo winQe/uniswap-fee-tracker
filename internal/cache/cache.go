@@ -8,3 +8,9 @@ type RateStore interface {
 	StoreRate(timestamp time.Time, price float64) error
 	GetRate(timestamp time.Time) (float64, error)
 }
+
+type JobsStore interface {
+	SetJob(jobID string, jobData []byte) error
+	GetJob(jobID string) ([]byte, error)
+	GetAllJobs() ([][]byte, error)
+}

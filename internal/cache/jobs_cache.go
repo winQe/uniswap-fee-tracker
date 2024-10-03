@@ -7,6 +7,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// BatchJob represents the response structure for a batch job.
+type BatchJob struct {
+	ID        string `json:"id"`     // UUID of the batch job
+	Status    string `json:"status"` // Status: pending, running, completed, failed
+	StartTime int64  `json:"start_time"`
+	EndTime   int64  `json:"end_time"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+	Result    string `json:"result"`
+}
+
 // JobsCache keeps track of all pending batch jobs within the TTL
 type JobsCache struct {
 	*RedisCache

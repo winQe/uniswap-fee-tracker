@@ -1,4 +1,4 @@
-.PHONY: api live_recorder test new_migration migrateup migratedown migrateup1 migratedown1 swagger
+.PHONY: api live_recorder test new_migration migrateup migratedown swagger docker-build docker-up docker-down
 
 api:
 	go run cmd/api/main.go
@@ -17,17 +17,26 @@ new_migration:
 	fi
 
 migrateup:
-	migrate -path internal/db/migrations -database "$(DB_URL)" -verbose up
+	docker-compose run --rm migrate up
 
 migrateup1:
-	migrate -path internal/db/migrations -database "$(DB_URL)" -verbose up 1
+	docker-compose run --rm migrate up 1
 
 migratedown:
-	migrate -path internal/db/migrations -database "$(DB_URL)" -verbose down
+	docker-compose run --rm migrate down
 
 migratedown1:
-	migrate -path internal/db/migrations -database "$(DB_URL)" -verbose down 1
+	docker-compose run --rm migrate down 1
 
 swagger:
 	swag init -g internal/api/docs.go
+
+docker-build:
+	docker-compose build
+
+docker-up:
+	docker-compose up -d
+
+docker-down:
+	docker-compose down
 

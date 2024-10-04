@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -116,6 +117,7 @@ func (th *TransactionHandler) getLatestTransactions(ctx *gin.Context) {
 	transactions, err := th.txDbQuery.GetLatestTransactions(ctx, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error"})
+		log.Printf("error getting latest txs %v", err)
 		return
 	}
 
